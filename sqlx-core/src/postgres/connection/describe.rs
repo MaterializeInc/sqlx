@@ -403,8 +403,10 @@ SELECT oid FROM pg_catalog.pg_type WHERE typname ILIKE $1
             .fetch_all(&mut *self)
             .await?;
 
-        // if it's cockroachdb skip this step #1248
-        if !self.stream.parameter_statuses.contains_key("crdb_version") {
+        // If the server is CockroachDB or Materialize, skip this step (#1248).
+        if !self.stream.parameter_statuses.contains_key("crdb_version")
+            && !self.stream.parameter_statuses.contains_key("mz_version")
+        {
             // patch up our null inference with data from EXPLAIN
             let nullable_patch = self
                 .nullables_from_explain(stmt_id, meta.parameters.len())
